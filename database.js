@@ -11,20 +11,47 @@ db.serialize(() => {
         link TEXT
     )`);
 });
-
 function addProgram(title, description, channel, date, link) {
-    db.run(
-        "INSERT INTO programs (title, description, channel, date, link) VALUES (?, ?, ?, ?, ?)",
-        [title, description, channel, date, link],
-        function (err) {
-            if (err) {
-                console.error("❌ Ошибка добавления:", err.message);
+    db.get("SELECT * FROM programs WHERE link = ?", [link], (err, row) => {
+        if (err) {
+            console.error("❌ Ошибка при проверке:", err.message);
+            return;
+        }
+
+        if (!row) {
+            // Если записи нет — вставляем
+            db.run(
+                "INSERT INTO programs (title, description, channel, date, link) VALUES (?, ?, ?, ?, ?)",
+                [title, description, channel, date, link],
+                function (err) {
+                    if (err) {
+                        console.error("❌ Ошибка добавления:", err.message);
+                    } else {
+                        console.log(`✅ Добавлена передача: ${title}`);
+                    }
+                }
+            );
+        } else {
+            // Если запись уже есть — обновим описание, если оно пустое
+            if (!row.description && description) {
+                db.run(
+                    "UPDATE programs SET description = ? WHERE link = ?",
+                    [description, link],
+                    function (err) {
+                        if (err) {
+                            console.error("❌ Ошибка обновления описания:", err.message);
+                        } else {
+                            console.log(`🔄 Обновлено описание: ${title}`);
+                        }
+                    }
+                );
             } else {
-                console.log(`✅ Добавлена передача: ${title}`);
+                console.log(`⚠ Пропущено (уже есть): ${title}`);
             }
         }
-    );
+    });
 }
+
 
 module.exports = { addProgram, db };
 
