@@ -1,3 +1,4 @@
-data/database.db
 .venv/
+data/database.db
+
 
